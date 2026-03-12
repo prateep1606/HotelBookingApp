@@ -1,47 +1,56 @@
 Feature: Cancel Hotel Booking
 
-Background:
-Given the base API url is "https://automationintesting.online"
+  Background: 
+    Given the base API url is "https://automationintesting.online"
 
-###################################################
-# CANCEL BOOKING API
-###################################################
+  ###################################################
+  # CANCEL BOOKING API
+  ###################################################
+  @cancel-valid-booking
+  Scenario Outline: cancel booking with valid details
+    Given user should book the hotel room with following details
+      | firstname   | lastname   | email   | phone   | checkin   | checkout   | depositpaid   |
+      | <firstname> | <lastname> | <email> | <phone> | <checkin> | <checkout> | <depositpaid> |
+    Then user should submit the hotel booking request
+    And user should receive the hotel room booking id
+    When user should cancel the booking
+    Then booking should be cancelled with status 200
+    And response should contain "Booking cancelled successfully"
 
-@verify-booking-cancellation
-Scenario Outline: verify booking cancellation
-Given user with a valid API key and "<booking_status>" booking reference
-When the user sends a cancellation request for booking ID "<booking_id>"
-Then the API response status code should be "<status_code>"
- And the response body should contain the message "<expected_message>"
+    Examples: 
+      | firstname | lastname | email       | phone       | checkin    | checkout   | depositpaid |
+      | Prateep   | PSPB     | new@abc.com | 87234765471 | 11-03-2026 | 12-03-2026 | true        |
 
-Examples:
-| booking_id |booking_status    |status_code|expected_message               |
-| B12345     |confirmed         |200        |Booking cancelled successfully |
-| B67890     |already cancelled |400        |Invalid Booking ID             |
-| B54321     |past stay         |400        |Invalid Booking ID             |
-|            |empty             |400        |Invalid Booking ID             |
-| B22334     |unauthorized user |403        |Permission Denied              |
-| B00000     |non-existent      |404        |Booking not found              |
+  Scenario Outline: cancel booking with invalid details
+    Given user should book the hotel room with following valid details
+      | firstname | lastname | email       | phone       | checkin    | checkout   | depositpaid |
+      | Prateep   | PSPB     | new@abc.com | 87234765471 | 11-03-2026 | 12-03-2026 | true        |
+    Then user should submit the hotel booking request
+    And user should receive the hotel room booking id
+    When user should attempt to cancel the booking with booking id "<bookingId>"
+    Then booking cancellation should fail with status <statusCode> and "<errorMessage>"
+    And the API response should match the response code
 
-@verify-cancellation-past-deadline
-Scenario Outline: verify cancellation attempt for a booking past the cancellation deadline
-Given user with a valid API key and a "<booking_status>" booking with ID "<booking_id>"
-And the current date is past the free cancellation deadline
-When the user sends a cancellation request for booking ID "<booking_id>"
-Then the API response status code should be "<status_code>"
-And the response body should contain the error message "Invalid Booking ID"
+    Examples: 
+      # Invalid booking ID
+      | bookingId | statusCode | errorMessage                 |
+      |           |        400 | Booking ID must not be blank |
+      | abc       |        400 | Booking ID must be numeric   |
+      |     99999 |        404 | Booking not found            |
+      # Already cancelled booking
+      | bookingId | statusCode | errorMessage                 |
+      |       101 |        404 | Booking not found    				|
+      # Unauthorized cancellation
+      | bookingId | statusCode | errorMessage                 |
+      |       101 |        403 | Permission Denied          	|
 
-Examples:
-| booking_id |booking_status    |status_code|
-| B12345     |confirmed         |400        |
-
-@verify-free-cancellation
-Scenario: verify cancellation attempt for a booking within the free cancellation period
-Given user with a valid API key and a booking ID "<booking_id>" with the future date
-When the user sends a cancellation request for booking status "<booking_status>"
-Then the API response status code should be "<status_code>"
-And the response body should contain the message "Booking cancelled successfully"
-
-Examples:
-| booking_id |booking_status    |status_code|
-| B12345     |confirmed         |200        |
+  @verify-cancellation-past-deadline
+  Scenario: verify cancellation attempt for a booking past the cancellation deadline
+    Given user should book the hotel room with following details
+      | firstname   | lastname   | email   | phone   | checkin   | checkout   | depositpaid   |
+      | <firstname> | <lastname> | <email> | <phone> | <checkin> | <checkout> | <depositpaid> |
+    Then user should submit the hotel booking request
+    And user should receive the hotel room booking id
+    When user should attempt to cancel the booking with booking id
+    Then the user sends request past the free cancellation deadline booking ID "<booking_id>"
+    And the response body should contain the error message 404
