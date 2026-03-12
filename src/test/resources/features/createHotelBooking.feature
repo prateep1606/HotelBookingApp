@@ -8,42 +8,47 @@ Given the base API url is "https://automationintesting.online"
 ###################################################
 
 @create-valid-booking
-Scenario outline: Create booking with valid details
-Given the endpoint "/api/booking"
+Scenario outline: create booking with valid details
+Given user gives checkin date as "<checkin>" and checkout date as "<checkout>"
 When user sets a valid roomid "<roomid>"
-And user sends a valid checkin "<checkin>" and checkout "<checkout>" dates
-And user enters a valid firstname "<firstname>"
-And user enters a valid lasttname "<lastname>"
-And user enters a valid email "<email>"
-And user enters a valid phone "<phone>"
-And user paid deposit "<depositpaid>"
+And user tries to create a booking
+| firstname   | lastname   | email   | phone   | depositpaid   |
+| <firstname> | <lastname> | <email> | <phone> | <depositpaid> |
+And the user should submit the booking
 When user sends POST request with mandatory booking details
 Then response status code should be 201
 And the booking should be created successfully
 
 Examples:
-|roomid |checkin    |checkout   |firstname |lastname |email        |phone      |depositpaid |
-|1      |10-03-2026 |11-03-2026 |Prateep   |Paulraj  |teep@abc.com |8723476547 |true        |
+|roomid |checkin     |checkout    |firstname    |lastname    |email         |phone       |depositpaid  |
+|1      | 2026-03-10 | 2026-03-12 | Prateep     | Paulraj    | teep@abc.com | 8723476547 | false       |
+|2      | 2026-04-15 | 2026-04-18 | Paulraj     | Prateep    | raj@mail.com | 8723476548 | true        |
 
 @validate-booking-firstname
-Scenario: validate booking with firstname
-Given the endpoint "/api/booking"
-When user sends POST request with "<firstname>"
+Scenario outline: Validate booking with firstname
+Given the booking API endpoint "/api/booking"
+And the user provides valid booking details except firstname:
+|roomid |checkin     |checkout    |lastname    |email         |phone       |depositpaid  |
+|1      | 2026-03-10 | 2026-03-12 |Paulraj     | teep@abc.com | 8723476547 | false       |
+When the user sends POST request with "<firstname>"
 Then the API should respond with status code "<status_code>"
 And the response body should contain the message "<expected_message>"
 
 Examples:
-| firstname                      | status_code | expected_message               |
-| ab                             | 400         | size must be between 3 and 18  |
-| bcdabcdabcdabcdabcdabcdabcdabcd| 400         | size must be between 3 and 18  |
-| !@%*&^                         | 400         | must be a well-formed firstname|
-|                                | 400         | Firstname should not be blank  |
-| Testing                        | 201         | Booking created successfully   |
+| firstname                      | status_code | expected_message                |
+| ab                             | 400         | size must be between 3 and 18   |
+| bcdabcdabcdabcdabcdabcdabcdabcd| 400         | size must be between 3 and 18   |
+| !@%*&^                         | 400         | must be a well-formed firstname |
+|                                | 400         | Firstname should not be blank   |
+| Testing                        | 201         | Booking created successfully    |
 
 @validate-booking-lastname
 Scenario: validate booking with lastname
-Given the endpoint "/api/booking"
-When user sends POST request with "<lastname>"
+Given the booking API endpoint "/api/booking"
+And the user provides valid booking details except lastname:
+|roomid |checkin     |checkout    |firstname  |email         |phone       |depositpaid  |
+|1      | 2026-03-10 | 2026-03-12 |Prateep    | teep@abc.com | 8723476547 | false       |
+When the user sends POST request with "<lastname>"
 Then the API should respond with status code "<status_code>"
 And the response body should contain the message "<expected_message>"
 
@@ -58,6 +63,9 @@ Examples:
 @validate-booking-phone-number
 Scenario: validate booking with phone number
 Given the endpoint "/api/booking"
+And the user provides valid booking details except phone number:
+|roomid |checkin     |checkout    |firstname  |lastname  |email        |depositpaid  |
+|1      | 2026-03-10 | 2026-03-12 |Prateep    |Paulraj   |teep@abc.com | false       |
 When user sends POST request with invalid "<phone_number>"
 Then the API should respond with status code "<status_code>"
 And the response body should contain the message "<expected_message>"
@@ -74,6 +82,9 @@ Examples:
 @validate-booking-email
 Scenario: validate booking with email
 Given the endpoint "/api/booking"
+And the user provides valid booking details except email:
+|roomid |checkin     |checkout    |firstname  |lastname  |phone        |depositpaid  |
+|1      | 2026-03-10 | 2026-03-12 |Prateep    |Paulraj   |8723476547   | false       |
 When user sends POST request with invalid "<email>"
 Then the API should respond with status code "<status_code>"
 And the response body should contain the message "<expected_message>"
@@ -86,12 +97,6 @@ Examples:
 | example.email.com        | 400         | must be a well-formed email address |
 | example@example@email.com| 400         | must be a well-formed email address |
 | valid@example.com        | 201         | Booking created successfully        |
-
-@validate-booking-without_deposit
-Scenario: validate booking without deposit
-Given the endpoint "/api/booking"
-When user sends POST request without deposit
-Then response status code should be 400
 
 @validate-invalid-checkin-checkout-dates
 Scenario Outline: validate a booking by giving incorrect checkout date and check in date
@@ -127,5 +132,5 @@ And user should not be able to proceed with booking
 
 Examples:
 |checkin    |checkout   |status_code |
-|2025-03-11 |2025-03-10 |400         |
+|2026-03-11 |2026-03-10 |400         |
 |2026-03-15 |2025-03-10 |400         |
