@@ -6,7 +6,8 @@ Feature: Cancel Hotel Booking
   ###################################################
   # CANCEL BOOKING API
   ###################################################
-  @cancel-valid-booking
+  
+  @cancel-booking-valid-details
   Scenario Outline: cancel booking with valid details
     Given user should book the hotel room with following details
       | firstname   | lastname   | email   | phone   | checkin   | checkout   | depositpaid   |
@@ -21,6 +22,7 @@ Feature: Cancel Hotel Booking
       | firstname | lastname | email       | phone       | checkin    | checkout   | depositpaid |
       | Prateep   | PSPB     | new@abc.com | 87234765471 | 11-03-2026 | 12-03-2026 | true        |
 
+	@cancel-booking-with-invalid-details
   Scenario Outline: cancel booking with invalid details
     Given user should book the hotel room with following valid details
       | firstname | lastname | email       | phone       | checkin    | checkout   | depositpaid |
